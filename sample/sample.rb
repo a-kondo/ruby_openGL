@@ -16,6 +16,9 @@ class Sample
   def disp()
     puts "disp"
     GL.Clear(GL::COLOR_BUFFER_BIT)
+    GL.LoadIdentity()
+    GLU.LookAt(3.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    GL.Rotated(@r, 0.0, 1.0, 0.0)
 =begin for mouse point line connected case
     for i in 0..@points.length-2
       GL.Color3d(0.0, 0.0, 0.0)
@@ -32,7 +35,11 @@ class Sample
       GL.Vertex3dv(@vertex[@edge[i][1]])
     end
     GL.End()
-    GL.Flush()
+    # GL.Flush()
+    GLUT.SwapBuffers()
+
+    @r += 1
+    @r = 0 if @r >= 360
   end
 
   def idle()
@@ -41,12 +48,14 @@ class Sample
 
   def resize(w, h)
     GL.Viewport(0, 0, w, h)
+
+    GL.MatrixMode(GL::PROJECTION)
     GL.LoadIdentity()
     #GL.Ortho(-w/@width, w/@width, -h/@height, h/@height, -1.0, 1.0)
     #GL.Ortho(-0.5, w-0.5, h-0.5, -0.5, -1.0, 1.0)
     #GL.Ortho(-2.0, 2.0, -2.0, 2.0, -2.0, 2.0)
     GLU.Perspective(30.0, w/h, 1.0, 100.0)
-    GLU.LookAt(3.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    GL.MatrixMode(GL::MODELVIEW)
   end
 
   def mouse(button, state, x, y)
@@ -93,6 +102,16 @@ class Sample
     case key
     when 'q'
       exit()
+    when 'a'
+      if @rotate_flag
+        GLUT.IdleFunc(lambda {})
+        @rotate_flag = false
+      else
+        GLUT.IdleFunc(method(:idle).to_proc())
+        @rotate_flag = true
+      end
+    when 'w'
+      GLUT.PostRedisplay()
     when '\033' # ESC but It's not \033, and no print ESC
       exit()
     end
@@ -129,6 +148,7 @@ class Sample
       [3, 7]
     ]
     @r = 0
+    @rotate_flag = false
 
     GLUT.InitWindowPosition(500, 500)
     GLUT.InitWindowSize(@width, @height)

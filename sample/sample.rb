@@ -2,6 +2,14 @@ require "glut"
 require "glu"
 require "gl"
 
+module Color
+  BLACK = [0.0, 0.0, 0.0] 
+  WHITE = [1.0, 1.0, 1.0]
+  RED = [1.0, 0.0, 0.0]
+  GREEN = [0.0, 1.0, 0.0]
+  BLUE = [0.0, 0.0, 1.0]
+end
+
 class Point
   attr_reader :x
   attr_reader :y
@@ -12,30 +20,110 @@ class Point
   end
 end
 
+class Link
+  attr_reader :start_node, :end_node
+  attr_accessor :line_color, :node_color
+  @@node_size = 5
+
+  def draw
+    GL.PointSize(@@node_size)
+    GL.Begin(GL::POINTS)
+    GL.Color3dv(@node_color)
+    GL.Vertex3fv(@start_node)
+    GL.Vertex3fv(@end_node)
+    GL.End()
+
+    GL.Begin(GL::LINES)
+    GL.Color3dv(@line_color)
+    GL.Vertex3fv(@start_node)
+    GL.Vertex3fv(@end_node)
+    GL.End()
+  end
+
+  def initialize(start_node, end_node)
+    @start_node = start_node
+    @end_node = end_node
+    @node_color = Color::BLACK
+    @line_color = Color::BLACK
+  end
+end
+
+class Cube
+  @@vertex = [
+    [0.0, 0.0, 0.0],
+    [1.0, 0.0, 0.0],
+    [1.0, 1.0, 0.0],
+    [0.0, 1.0, 0.0],
+    [0.0, 0.0, 1.0],
+    [1.0, 0.0, 1.0],
+    [1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0]
+  ]
+  @@edge = [
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7]
+  ]
+
+  def self.draw(color)
+    GL.Begin(GL::LINES)
+    GL.Color3dv(color)
+    for i in 0..11
+      GL.Vertex3dv(@@vertex[@@edge[i][0]])
+      GL.Vertex3dv(@@vertex[@@edge[i][1]])
+    end
+    GL.End()
+  end
+end
+
 class Sample 
+  def axises
+    GL.PointSize(5)
+    GL.Begin(GL::POINTS)
+    GL.Color3dv(Color::BLACK)
+    GL.Vertex3f(0.0, 0.0, 0.0)
+    GL.End()
+
+    # blue is x axis
+    GL.Begin(GL::LINES)
+    GL.Color3dv(Color::BLUE)
+    GL.Vertex3f(0.0, 0.0, 0.0)
+    GL.Vertex3f(100.0, 0.0, 0.0)
+    # red is y axis
+    GL.Color3dv(Color::RED)
+    GL.Vertex3f(0.0, 0.0, 0.0)
+    GL.Vertex3f(0.0, 100.0, 0.0)
+    # green is z axis
+    GL.Color3dv(Color::GREEN)
+    GL.Vertex3f(0.0, 0.0, 0.0)
+    GL.Vertex3f(0.0, 0.0, 100.0)
+    GL.End()
+  end
+
   def disp()
     puts "disp"
     GL.Clear(GL::COLOR_BUFFER_BIT)
-    GL.LoadIdentity()
-    GLU.LookAt(3.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+
+    axises()
+
+    GL.PushMatrix()
     GL.Rotated(@r, 0.0, 1.0, 0.0)
-=begin for mouse point line connected case
-    for i in 0..@points.length-2
-      GL.Color3d(0.0, 0.0, 0.0)
-      GL.Begin(GL::POLYGON)
-      GL.Vertex2d(@points[i].x, @points[i].y)
-      GL.Vertex2d(@points[i+1].x, @points[i+1].y)
-      GL.End()
-    end
-=end
-    GL.Color3d(0.0, 0.0, 0.0)
-    GL.Begin(GL::LINES)
-    for i in 0..11
-      GL.Vertex3dv(@vertex[@edge[i][0]])
-      GL.Vertex3dv(@vertex[@edge[i][1]])
-    end
-    GL.End()
-    # GL.Flush()
+    Cube.draw(Color::BLACK)
+
+    GL.Translated(1.0, 1.0, 1.0)
+    GL.Rotated(@r*2, 0.0, 1.0, 0.0)
+    Cube.draw(Color::RED)
+
+    GL.PopMatrix()
     GLUT.SwapBuffers()
 
     @r += 1
@@ -51,11 +139,11 @@ class Sample
 
     GL.MatrixMode(GL::PROJECTION)
     GL.LoadIdentity()
-    #GL.Ortho(-w/@width, w/@width, -h/@height, h/@height, -1.0, 1.0)
-    #GL.Ortho(-0.5, w-0.5, h-0.5, -0.5, -1.0, 1.0)
-    #GL.Ortho(-2.0, 2.0, -2.0, 2.0, -2.0, 2.0)
     GLU.Perspective(30.0, w/h, 1.0, 100.0)
+
     GL.MatrixMode(GL::MODELVIEW)
+    GL.LoadIdentity()
+    GLU.LookAt(3.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
   end
 
   def mouse(button, state, x, y)
@@ -81,19 +169,6 @@ class Sample
   end
 
   def motion(x, y)
-=begin
-    GL.Enable(GL::COLOR_LOGIC_OP)
-    GL.LogicOp(GL::INVERT)
-
-    GL.Begin(GL::LINES)
-    GL.Vertex2i(@points[@points.length-1].x, @points[@points.length-1].y)
-    GL.Vertex2i(x, y)
-    GL.End()
-    GL.Flush()
-
-    GL.LogicOp(GL::COPY)
-    GL.Disable(GL::COLOR_LOGIC_OP)
-=end
     puts "in motion #{x} #{y}"
   end
 
@@ -112,6 +187,14 @@ class Sample
       end
     when 'w'
       GLUT.PostRedisplay()
+    when 'j'
+      @side += 2.0
+      GL.LoadIdentity()
+      GLU.LookAt(@side, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+    when 'l'
+      @side -= 2.0
+      GL.LoadIdentity()
+      GLU.LookAt(@side, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
     when '\033' # ESC but It's not \033, and no print ESC
       exit()
     end
@@ -119,38 +202,15 @@ class Sample
 
   def init()
     @points = []
-    @width = 300.0
-    @height = 200.0
+    @width = 600.0
+    @height = 400.0
     @mouse_on_x = 0
     @mouse_on_y = 0
-    @vertex = [
-      [0.0, 0.0, 0.0],
-      [1.0, 0.0, 0.0],
-      [1.0, 1.0, 0.0],
-      [0.0, 1.0, 0.0],
-      [0.0, 0.0, 1.0],
-      [1.0, 0.0, 1.0],
-      [1.0, 1.0, 1.0],
-      [0.0, 1.0, 1.0]
-    ]
-    @edge = [
-      [0, 1],
-      [1, 2],
-      [2, 3],
-      [3, 0],
-      [4, 5],
-      [5, 6],
-      [6, 7],
-      [7, 4],
-      [0, 4],
-      [1, 5],
-      [2, 6],
-      [3, 7]
-    ]
     @r = 0
     @rotate_flag = false
+    @side = 4.0
 
-    GLUT.InitWindowPosition(500, 500)
+    GLUT.InitWindowPosition(200, 200)
     GLUT.InitWindowSize(@width, @height)
     
     GLUT.Init()

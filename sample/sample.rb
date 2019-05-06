@@ -110,8 +110,9 @@ class Sample
   end
 
   def disp()
-    puts "disp"
     GL.Clear(GL::COLOR_BUFFER_BIT)
+    GL.LoadIdentity()
+    GLU.LookAt(@view_from_x, @view_from_y, @view_from_z, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 
     axises()
 
@@ -125,12 +126,11 @@ class Sample
 
     GL.PopMatrix()
     GLUT.SwapBuffers()
-
-    @r += 1
-    @r = 0 if @r >= 360
   end
 
   def idle()
+    @r = 0 if @r >= 360
+    @r += 1
     GLUT.PostRedisplay()
   end
 
@@ -142,8 +142,6 @@ class Sample
     GLU.Perspective(30.0, w/h, 1.0, 100.0)
 
     GL.MatrixMode(GL::MODELVIEW)
-    GL.LoadIdentity()
-    GLU.LookAt(3.0, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
   end
 
   def mouse(button, state, x, y)
@@ -186,18 +184,38 @@ class Sample
         @rotate_flag = true
       end
     when 'w'
+      @r += 1
+      GLUT.PostRedisplay()
+    when 'k'
+      view_from_move_to_init()
       GLUT.PostRedisplay()
     when 'j'
-      @side += 2.0
-      GL.LoadIdentity()
-      GLU.LookAt(@side, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+      @view_from_x -= 2.0
+      GLUT.PostRedisplay()
     when 'l'
-      @side -= 2.0
-      GL.LoadIdentity()
-      GLU.LookAt(@side, 4.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+      @view_from_x += 2.0
+      GLUT.PostRedisplay()
+    when 'i'
+      @view_from_y += 2.0
+      GLUT.PostRedisplay()
+    when 'm'
+      @view_from_y -= 2.0
+      GLUT.PostRedisplay()
+    when 's'
+      @view_from_z += 1.0
+      GLUT.PostRedisplay()
+    when 'z'
+      @view_from_z -= 1.0
+      GLUT.PostRedisplay()
     when '\033' # ESC but It's not \033, and no print ESC
       exit()
     end
+  end
+
+  def view_from_move_to_init()
+    @view_from_x = 3.0
+    @view_from_y = 4.0
+    @view_from_z = 5.0
   end
 
   def init()
@@ -208,7 +226,7 @@ class Sample
     @mouse_on_y = 0
     @r = 0
     @rotate_flag = false
-    @side = 4.0
+    view_from_move_to_init()
 
     GLUT.InitWindowPosition(200, 200)
     GLUT.InitWindowSize(@width, @height)
